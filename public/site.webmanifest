@@ -1,0 +1,7 @@
+{
+  "name": "QuickerPlate",
+  "short_name": "QP",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "display": "standalone"
+}

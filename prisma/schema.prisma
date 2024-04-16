@@ -1,0 +1,66 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["rhel-openssl-1.0.x", "darwin-arm64"]
+}
+
+model Session {
+  id          String    @id @default(cuid())
+  token       String    @unique
+  userId String
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(name: "UserToSession", fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model User {
+  id                      String                  @id @default(cuid())
+  firstName               String
+  lastName                String
+  mobileNo                String
+  email                   String                  @unique
+  password                String
+  role                    Role                    @default(USER)
+  sessions                Session[]               @relation(name: "UserToSession")
+  passwordResetToken      String?
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+
+  toDos                   ToDo[]
+
+  @@index([email])
+}
+
+model DataMigrationHistory {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+model ToDo {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  isCompleted Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
