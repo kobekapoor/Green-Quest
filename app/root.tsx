@@ -21,9 +21,7 @@ import { withEmotionCache } from '@emotion/react'
 import { ServerStyleContext, ClientStyleContext } from './context'
 import { theme } from './theme'
 
-const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
-
-export const meta: V2_MetaFunction = () => [{ title: siteName }]
+export const meta: V2_MetaFunction = () => [{ title: "Green Quest" }]
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: 'stylesheet', href: cssBundleHref }] : []),
@@ -107,6 +105,7 @@ const Document = withEmotionCache(
 )
 
 export const loader = ({ request }: DataFunctionArgs) => {
+
   return request.headers.get('cookie') ?? ''
 }
 

@@ -27,7 +27,7 @@
     "@googlemaps/react-wrapper": "^1.1.35",
     "@internationalized/date": "^3.2.0",
     "@paralleldrive/cuid2": "^2.2.0",
-    "@prisma/client": "^5.12.1",
+    "@prisma/client": "^5.7.0",
     "@react-email/components": "^0.0.14",
     "@react-email/render": "^0.0.7",
     "@remix-run/css-bundle": "^1.19.1",

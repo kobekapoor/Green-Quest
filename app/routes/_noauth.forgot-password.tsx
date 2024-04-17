@@ -23,16 +23,26 @@ import { ValidatedInput } from '~/components/ValidatedInput'
 import { createId } from '@paralleldrive/cuid2'
 import { sendSingleEmail } from '~/utils/email.server'
 import { ForgotPasswordEmail } from '~/emails/ForgotPassword'
-import { useActionData } from '@remix-run/react'
+import { useActionData, useLoaderData } from '@remix-run/react'
 
-const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
 const schema = z.object({
   email: zfd.text(z.string().email()),
 })
 
+export const loader = async () => {
+
+  const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
+
+  return json({
+    siteName,
+  })
+}
+
 const validator = withZod(schema)
 
 export const action = async (args: DataFunctionArgs) => {
+
+  const { siteName } = useLoaderData<typeof loader>()
   const { data, error } = await validator.validate(
     await args.request.formData()
   )

@@ -6,12 +6,22 @@ import {
   Container,
   useBreakpointValue,
 } from '@chakra-ui/react'
-import { Outlet } from '@remix-run/react'
+import { json } from '@remix-run/node'
+import { Outlet, useLoaderData } from '@remix-run/react'
 import { env } from 'process'
 
-const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
+export const loader = async () => {
+
+  const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
+
+  return json({
+    siteName,
+  })
+}
 
 export default function NoAuth() {
+  const { siteName } = useLoaderData<typeof loader>()
+
   return (
     <>
       <Box>

@@ -21,6 +21,7 @@ import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
+  useBreakpointValue,
 } from '@chakra-ui/react'
 import {
   HamburgerIcon,
@@ -39,8 +40,6 @@ interface NavItem {
   children?: Array<NavItem>
   href?: string
 }
-
-const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
 
 export const loader: LoaderFunction = async ({ request }) => {
   const user = await getUser(request)
@@ -61,11 +60,16 @@ export const loader: LoaderFunction = async ({ request }) => {
   const adminNavItems: Array<NavItem> = [
     {
       label: 'Admin',
+      href: '/admin/seasons',
       children: [
         {
           label: 'Users',
           href: '/admin/users',
         },
+        {
+          label: 'Seasons',
+          href: '/admin/seasons',
+        }
       ],
     },
     
@@ -91,17 +95,21 @@ export const loader: LoaderFunction = async ({ request }) => {
     navItems.push(...superAdminNavItems)
   }
 
+  const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
+
   return json({
     navItems: navItems,
+    timezone: 'Australia/Sydney',
+    siteName,
   })
 }
 
 function Nav() {
   const { isOpen, onToggle } = useDisclosure()
-  const { navItems } = useLoaderData<typeof loader>()
+  const { navItems, siteName } = useLoaderData<typeof loader>()
   const navigate = useNavigate()
 
-  const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
+  console.log("The thingy is ", isOpen)
 
   return (
     <Box>
@@ -122,7 +130,10 @@ function Nav() {
               display={{ base: 'flex', lg: 'none' }}
             >
               <IconButton
-                onClick={onToggle}
+                  onClick={() => {
+                    console.log("Toggling collapse");
+                    onToggle();
+                  }}
                 icon={
                   isOpen ? (
                     <CloseIcon w={3} h={3} />
@@ -134,9 +145,17 @@ function Nav() {
                 aria-label={'Toggle Navigation'}
               />
             </Flex>
-            <Link href="/" _hover={{ textDecoration: 'none' }}>
-              {siteName}
-            </Link>
+            <Text
+                textAlign={useBreakpointValue({ base: 'center', lg: 'left' })}
+                fontSize={'lg'}
+                fontFamily={'heading'}
+                fontWeight={500}
+                color={useColorModeValue('gray.800', 'white')}
+                onClick={() => navigate('/')}
+                cursor={'pointer'}
+              >
+                {siteName}
+              </Text>
             <Flex flex={{ base: 1 }} justify={{ base: 'center', lg: 'start' }}>
               <Flex display={{ base: 'none', lg: 'flex' }} ml={10}>
                 <DesktopNav navItems={navItems} />
@@ -278,6 +297,8 @@ const MobileNav = ({ navItems }: NavProps) => {
 
 const MobileNavItem = ({ label, children, href }: NavItem) => {
   const { isOpen, onToggle } = useDisclosure()
+
+  console.log('MobileNavItem', label, children, href)
 
   return (
     <Stack spacing={4} onClick={children && onToggle}>

@@ -9,31 +9,35 @@ generator client {
 }
 
 model Session {
-  id          String    @id @default(cuid())
-  token       String    @unique
-  userId String
-  expiresAt   DateTime
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  user        User      @relation(name: "UserToSession", fields: [userId], references: [id])
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(name: "UserToSession", fields: [userId], references: [id])
 
   @@index([userId])
 }
 
 model User {
-  id                      String                  @id @default(cuid())
-  firstName               String
-  lastName                String
-  mobileNo                String
-  email                   String                  @unique
-  password                String
-  role                    Role                    @default(USER)
-  sessions                Session[]               @relation(name: "UserToSession")
-  passwordResetToken      String?
-  createdAt               DateTime                @default(now())
-  updatedAt               DateTime                @updatedAt
+  id                 String    @id @default(cuid())
+  firstName          String
+  lastName           String
+  mobileNo           String
+  email              String    @unique
+  password           String
+  role               Role      @default(USER)
+  sessions           Session[] @relation(name: "UserToSession")
+  passwordResetToken String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  toDos                   ToDo[]
+  toDos ToDo[]
+
+  seasons Season[] @relation("UserSeasons")
+  Result  Result[]
+  Team    Team[]
 
   @@index([email])
 }
@@ -53,14 +57,87 @@ enum Role {
 }
 
 model ToDo {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
   description String?
-  isCompleted Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   userId      String
-  user        User      @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
+}
+
+// Green Quest Objects
+
+model Season {
+  id      String  @id @default(cuid())
+  name    String
+  members User[]  @relation("UserSeasons")
+  events  Event[] @relation("SeasonEvents")
+  teams   Team[]
+  startDate DateTime
+  endDate   DateTime
+
+  //Rules
+  maxGolfers Int     @default(4) // Maximum number of golfers a user can select per event
+  maxBench   Int     @default(2) // Maximum number of golfers a user can have on the bench
+  cap        Decimal @default(100) // Salary cap for the event
+}
+
+model Golfer {
+  id           String        @id @default(cuid())
+  name         String
+  salary       Decimal
+  performances Performance[]
+  events       Event[]       @relation("EventGolfers")
+  teams        Team[]        @relation("TeamGolfers")
+  bench        Team[]        @relation("TeamBench")
+}
+
+model Event {
+  id           String        @id @default(cuid())
+  name         String
+  startDate    DateTime
+  endDate      DateTime
+  golfers      Golfer[]      @relation("EventGolfers")
+  season       Season        @relation("SeasonEvents", fields: [seasonId], references: [id])
+  seasonId     String
+  performances Performance[]
+  results      Result[]
+}
+
+model Performance {
+  id          String  @id @default(cuid())
+  golfer      Golfer  @relation(fields: [golferId], references: [id])
+  golferId    String
+  event       Event   @relation(fields: [eventId], references: [id])
+  eventId     String
+  status      String? // Missed Cut, Withdrawn, etc.
+  day         Int     @default(1) // Which day of the 4 is this performance for
+  score       Int // Total score for the event, could be under/over par etc.
+  holesPlayed Int // Total holes played in the event
+}
+
+model Team {
+  id       String   @id @default(cuid())
+  user     User     @relation(fields: [userId], references: [id])
+  userId   String
+  seasonId String
+  season   Season   @relation(fields: [seasonId], references: [id])
+  golfers  Golfer[] @relation("TeamGolfers")
+  bench    Golfer[] @relation("TeamBench")
+  results  Result[]
+}
+
+model Result {
+  id      String @id @default(cuid())
+  event   Event  @relation(fields: [eventId], references: [id])
+  eventId String
+  team    Team   @relation(fields: [teamId], references: [id])
+  teamId  String
+  user    User   @relation(fields: [userId], references: [id])
+  userId  String
+  points  Int // Points earned in the event based on performances and rule settings
 }

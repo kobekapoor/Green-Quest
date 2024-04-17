@@ -19,10 +19,9 @@ import { NewUserEmail } from '~/emails/NewUser'
 import { createId } from '@paralleldrive/cuid2'
 import { env } from 'process'
 
-const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
 
-export function meta() {
-  return [{ title: `${siteName} - New User` }]
+export function meta({data}) {
+  return [{ title: `${data.siteName} - New User` }]
 }
 
 const validator = withZod(
@@ -41,7 +40,10 @@ export const loader = async (args: DataFunctionArgs) => {
   if (!user || (user.role !== Role.ADMIN && user.role !== Role.SUPER_ADMIN))
     throw redirect('/signin')
 
+  const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
+
   return json({
+    siteName,
     breadcrumbs: [
       {
         label: 'Users',

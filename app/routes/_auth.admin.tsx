@@ -1,14 +1,18 @@
 import { json } from '@remix-run/node'
 import { Outlet } from '@remix-run/react'
 
-const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
 
-export function meta() {
-  return [{ title: `${siteName} - Admin` }]
+export function meta({data}) {
+  return [{ title: `${data.siteName} - Admin` }]
 }
 
 export const loader = async () => {
+
+  const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
+
+
   return json({
+    siteName,
     breadcrumbs: [{ label: 'Admin', href: '/admin', isCurrentPage: true }],
   })
 }

@@ -15,10 +15,9 @@ import { ValidatedInput } from '~/components/ValidatedInput';
 import { ValidatedTextarea } from '~/components/ValidatedTextarea';
 import { SubmitButton } from '~/components/SubmitButton';
 
-const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
+export function meta({data}) {
 
-export function meta() {
-  return [{ title: `${siteName} - Home` }]
+  return [{ title: `${data.siteName} - Home` }]
 }
 
 const validator = withZod(
@@ -36,19 +35,9 @@ export const loader = async (args: DataFunctionArgs) => {
     throw redirect('/signin');
   }
 
-  const toDos = await prisma.toDo.findMany({
-    where: {
-      userId: user.id,
-    },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      isCompleted: true,
-    },
-  });
+  const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
 
-  return json({ user, toDos });
+  return json({ user, siteName });
 };
 
 export async function action(args: DataFunctionArgs) {
@@ -62,87 +51,33 @@ export async function action(args: DataFunctionArgs) {
   if (error) return validationError(error)
 
   console.log(data)
-
-  if (data.intent === 'delete') {
-    await prisma.toDo.delete({
-      where: {
-        id: data.id,
-      },
-    });
-  } else {
-    await prisma.toDo.create({
-      data: {
-        title: data.title ?? '',
-        description: data.description,
-        userId: user.id,
-      },
-    });
-  }
   
   return null
 }
 
 export default function index() {
-  const { toDos, user } = useLoaderData<typeof loader>()
+  const { user } = useLoaderData<typeof loader>()
   const isMobile = useBreakpointValue({ base: true, md: false });
 
   return (
     <Box width="100%">
       <Stack spacing={10}>
         <Heading size="lg">Welcome, {user.firstName}</Heading>
+        
         <Box>
-          
-          <Heading size="md" mb={5}>
-            Your To Dos
-          </Heading>
-          
-          <Table>
+
+          <Heading size="md">Season</Heading>
+          <Table variant="simple">
             <Thead>
               <Tr>
-                <Th>Title</Th>
-                <Th>Description</Th>
-                <Th>Actions</Th>
+                <Th>Events</Th>
               </Tr>
             </Thead>
-            <Tbody>
-              {toDos.map((toDo) => (
-                <Tr key={toDo.id}>
-                  
-                  <Td>{toDo.title}</Td>
-                  <Td>{toDo.description}</Td>
-                  <Td>
-                    <ValidatedForm validator={validator} method="post">
-                      <Input type="hidden" name="id" value={toDo.id} />
-                      <Button colorScheme="red" name="intent" value="delete" type="submit">Delete</Button>
-                    </ValidatedForm>
-                  </Td>
-                  
-                </Tr>
-              ))}
-            </Tbody>
-          </Table> 
+            
+          </Table>
+
         </Box>
-        
-        <Card>
-          <CardHeader>
-            <Heading size="md">
-              Add a new To Do
-            </Heading>
-          </CardHeader>
-          <CardBody>
-            <ValidatedForm validator={validator} method="post">
-              <HStack spacing={4}>
-                <FormControl>
-                  <HStack spacing={4} alignItems="start">
-                    <ValidatedInput placeholder="Title" name="title" label="Title" />
-                    <ValidatedTextarea placeholder="Description" name="description" label="Description" />
-                  </HStack>
-                </FormControl>
-                <Button colorScheme="blue" type="submit">Add</Button>
-              </HStack> 
-            </ValidatedForm>
-          </CardBody>
-        </Card>
+
       </Stack>
     </Box>
   );

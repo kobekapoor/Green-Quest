@@ -6,7 +6,7 @@ import {
   Heading,
   useColorModeValue,
 } from '@chakra-ui/react'
-import { DataFunctionArgs } from '@remix-run/node'
+import { DataFunctionArgs, json } from '@remix-run/node'
 import { withZod } from '@remix-validated-form/with-zod'
 import { z } from 'zod'
 import { zfd } from 'zod-form-data'
@@ -23,8 +23,7 @@ import { Role } from '@prisma/client'
 import { sendSingleEmail } from '~/utils/email.server'
 import { NewSignupEmail } from '~/emails/NewSignup'
 import { env } from 'process'
-
-const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
+import { useLoaderData } from '@remix-run/react'
 
 const schema = z
   .object({
@@ -42,7 +41,17 @@ const schema = z
 
 const clientValidator = withZod(schema)
 
+export const loader = async () => {
+
+  const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
+
+  return json({
+    siteName,
+  })
+}
+
 export const action = async (args: DataFunctionArgs) => {
+  const { siteName } = useLoaderData<typeof loader>()
   const serverValidator = withZod(
     schema
       .refine(

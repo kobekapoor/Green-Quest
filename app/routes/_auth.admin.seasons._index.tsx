@@ -26,11 +26,9 @@ import { getUser } from '~/utils/auth.server'
 import { Role } from '@prisma/client'
 import { useState } from 'react'
 import { BsEraserFill } from 'react-icons/bs'
-import { env } from 'process'
-
 
 export function meta({data}) {
-  return [{ title: `${data.siteName} - Users` }]
+  return [{ title: `${data.siteName} - Seasons` }]
 }
 
 export const loader = async (args: DataFunctionArgs) => {
@@ -41,70 +39,50 @@ export const loader = async (args: DataFunctionArgs) => {
 
   const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
 
-  const users = await prisma.user.findMany({
+  const seasons = await prisma.season.findMany({
     select: {
       id: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      mobileNo: true,
+      name: true,
+      members: true,
+      events: true,
+      startDate: true,
+      endDate: true,
     },
     orderBy: {
-      lastName: 'asc',
+      name: 'asc',
     },
   })
 
   return json({
-    users,
+    seasons,
     siteName,
     breadcrumbs: [
       {
-        label: 'Users',
-        href: '/admin/users',
+        label: 'Seasons',
+        href: '/admin/seasons',
         isCurrentPage: true,
       },
     ],
   })
 }
 
-export default function AdminUsers() {
-  const { users } = useLoaderData<typeof loader>()
+export default function AdminSeasons() {
+  const { seasons } = useLoaderData<typeof loader>()
   const navigate = useNavigate()
-  const [search, setSearch] = useState('')
-  const filteredUsers = users.filter(
-    user =>
-      user.firstName.toLowerCase().includes(search.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase()) ||
-      user.mobileNo.toLowerCase().includes(search.toLowerCase())
-  )
+
   return (
     <>
       <Card>
         <CardBody>
-          <InputGroup>
-            <Input
-              placeholder={'Search'}
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-            {search && (
-              <InputRightElement
-                onClick={() => setSearch('')}
-                cursor={'pointer'}
-              >
-                <Icon as={BsEraserFill} />
-              </InputRightElement>
-            )}
-          </InputGroup>
           <TableContainer>
             <Table variant={'simple'}>
               <Thead>
                 <Tr>
-                  <Th>First Name</Th>
-                  <Th>Last Name</Th>
-                  <Th>Email</Th>
-                  <Th>Mobile</Th>
+                  <Th>Name</Th>
+                  <Th>Start Date</Th>
+                  <Th>End Date</Th>
+                  <Th>Members</Th>
+                  <Th>Events</Th>
                   <Th>
                     <Link to={'new'}>
                       <AddIcon />
@@ -113,25 +91,26 @@ export default function AdminUsers() {
                 </Tr>
               </Thead>
               <Tbody>
-                {filteredUsers.map(user => (
+                {seasons.map(season => (
                   <Tr
-                    key={user.id}
-                    onClick={() => navigate(`${user.id}/details`)}
+                    key={season.id}
+                    onClick={() => navigate(`${season.id}`)}
                     cursor={'pointer'}
                   >
-                    <Td>{user.firstName}</Td>
-                    <Td>{user.lastName}</Td>
-                    <Td>{user.email}</Td>
-                    <Td>{user.mobileNo}</Td>
+                    <Td>{season.name}</Td>
+                    <Td>{season.startDate}</Td>
+                    <Td>{season.endDate}</Td>
+                    <Td>{season.members.length}</Td>
+                    <Td>{season.events.length}</Td>
                     <Td>
                       <ChevronRightIcon />
                     </Td>
                   </Tr>
                 ))}
-                {filteredUsers.length === 0 && (
+                {seasons.length === 0 && (
                   <Tr>
                     <Td colSpan={5} textAlign={'center'}>
-                      No users found
+                      No seasons found
                     </Td>
                   </Tr>
                 )}

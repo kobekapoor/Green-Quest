@@ -9,10 +9,9 @@ import { getUser } from '~/utils/auth.server'
 import { prisma } from '~/utils/prisma.server'
 import { env } from 'process'
 
-const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
 
-export function meta() {
-  return [{ title: `${siteName} - DB` }]
+export function meta({data}) {
+  return [{ title: `${data.siteName} - DB` }]
 }
 
 const migrationToken = 'clj2ixj30000008l18101588a' //https://www.getuniqueid.com/cuid
@@ -32,7 +31,10 @@ export const loader = async (args: DataFunctionArgs) => {
     },
   })
 
+  const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
+
   return json({
+    siteName,
     hasMigration: migrationHistory === null,
     breadcrumbs: [
       { label: 'DB Maintenance', href: '/superadmin/db', isCurrentPage: true },
