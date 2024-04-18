@@ -43,8 +43,6 @@ export const MultiPillAutocomplete: React.FC<Props> = ({
   const [selectedOptions, setSelectedOptions] = useControlField(name);
   const [search, setSearch] = useState('');
 
-  console.log('Multi options', options)
-
   const { setTouched } = useField(name)
 
   // Filter available options based on search and already selected options
@@ -55,7 +53,6 @@ export const MultiPillAutocomplete: React.FC<Props> = ({
 
   // Handling addition and removal of options
   const addOption = (value: string) => {
-    console.log('addOption', value)
     const newSelectedOptions = [...(selectedOptions || []), value];
     setSelectedOptions(newSelectedOptions);
     setTouched(true) // Mark the field as touched

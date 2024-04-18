@@ -109,8 +109,6 @@ function Nav() {
   const { navItems, siteName } = useLoaderData<typeof loader>()
   const navigate = useNavigate()
 
-  console.log("The thingy is ", isOpen)
-
   return (
     <Box>
       <Flex
@@ -131,7 +129,6 @@ function Nav() {
             >
               <IconButton
                   onClick={() => {
-                    console.log("Toggling collapse");
                     onToggle();
                   }}
                 icon={
@@ -297,8 +294,6 @@ const MobileNav = ({ navItems }: NavProps) => {
 
 const MobileNavItem = ({ label, children, href }: NavItem) => {
   const { isOpen, onToggle } = useDisclosure()
-
-  console.log('MobileNavItem', label, children, href)
 
   return (
     <Stack spacing={4} onClick={children && onToggle}>

@@ -32,7 +32,7 @@ export const loader = async (args: DataFunctionArgs) => {
 
   const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
 
-  const league = await prisma.league.findUnique({
+  const season = await prisma.season.findUnique({
     where: {
       id: args.params.id,
     },
@@ -44,19 +44,19 @@ export const loader = async (args: DataFunctionArgs) => {
     },
   })
 
-  if (!league) throw new Error('User not found')
+  if (!season) throw new Error('User not found')
 
   return json({
-    league,
+    season,
     siteName,
     breadcrumbs: [
       {
-        label: 'Leagues',
-        href: '/admin/leagues',
+        label: 'Seasons',
+        href: '/admin/seasons',
       },
       {
-        label: `${league.name}`,
-        href: `/admin/leagues/${league.id}`,
+        label: `${season.name}`,
+        href: `/admin/seasons/${season.id}`,
         isCurrentPage: true,
       },
     ],
@@ -70,7 +70,7 @@ export const action = async (args: DataFunctionArgs) => {
 
   if (error) return validationError(error)
 
-  await prisma.league.update({
+  await prisma.season.update({
     where: {
       id: args.params.id,
     },
@@ -79,18 +79,18 @@ export const action = async (args: DataFunctionArgs) => {
     },
   })
 
-  return redirect(`/admin/leagues`)
+  return redirect(`/admin/seasons`)
 }
 
-export default function AdminLeagueDetails() {
-  const { league } = useLoaderData<typeof loader>()
+export default function AdminSeasonDetails() {
+  const { season } = useLoaderData<typeof loader>()
   return (
     <>
       <Card>
         <CardBody>
           <ValidatedForm
             validator={validator}
-            defaultValues={league}
+            defaultValues={season}
             method="post"
             // resetAfterSubmit={true}
           >

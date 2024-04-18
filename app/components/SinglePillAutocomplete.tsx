@@ -41,9 +41,6 @@ export const SinglePillAutocomplete: React.FC<Props> = ({
 }) => {
   const { error } = useField(name);
   const [selectedOption, setSelectedOption] = useControlField<string>(name);
-
-  
-  console.log('Single select options', options)
   
   const [search, setSearch] = useState('');
   const { setTouched } = useField(name)
