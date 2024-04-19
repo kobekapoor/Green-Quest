@@ -92,6 +92,7 @@ export default function index() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGolfer, setSelectedGolfer] = useState<string | null>(null);
   const [selectedSeat, setSelectedSeat] = useState<string | null>("team");
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(true);
 
   const handleAddGolfer = (seat) => {
     setSelectedSeat(seat);
@@ -157,76 +158,146 @@ export default function index() {
 
   const remainingSalary = (Number(100) - spent).toFixed(2);
 
+  const sortedGolfers = golfers.sort((a, b) => b.salary - a.salary);
+
   return (
     <Box width="100%">
       <Stack spacing={10}>
         <Heading size="lg">Welcome, {user.firstName}</Heading>
-        <Flex dir="row">
+        <Flex dir={["row", "column"]}>
           <Box width="33%">
-            <Heading mb={6} fontSize="large">Leaderboard</Heading>
-            <Card>
-              <CardHeader>
-                <Heading fontSize="medium">
-                  RBC Heritage
-                </Heading>
-              </CardHeader>
-              <CardBody>
+            <Heading fontSize="large">Leaderboard</Heading>
+            <Flex marginY={6} dir="row">
+              <Button
+                  onClick={() => setIsLeaderboardOpen(true)}
+                  colorScheme={isLeaderboardOpen ? "blue" : undefined}
+                  variant={isLeaderboardOpen ? "solid" : "outline"}
+                >
+                  Leaderboard
+                </Button>
+                <Spacer />
+                <Button
+                  onClick={() => setIsLeaderboardOpen(false)}
+                  colorScheme={!isLeaderboardOpen ? "blue" : undefined}
+                  variant={!isLeaderboardOpen ? "solid" : "outline"}
+                >
+                  Season Standings
+                </Button>
+            </Flex>
+            {isLeaderboardOpen ? (
+              <Card>
+                <CardHeader>
+                  <Heading fontSize="medium">
+                    RBC Heritage
+                  </Heading>
+                </CardHeader>
+                <CardBody>
+                  <Stack spacing={2}>
+                    <Table variant="simple">
+                      <Thead>
+                        <Tr>
+                          <Th p={2}>Rank</Th>
+                          <Th p={2}>Team</Th>
+                          <Th p={2}>Score</Th>
+                          <Th p={2}></Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        <Tr>
+                          <Td p={2}>1</Td>
+                          <Td p={2}>Kobe K</Td>
+                          <Td p={2}>-18</Td>
+                          <Td p={2}>
+                            <Button width="100%">View Team</Button>
+                          </Td>
+                        </Tr>
+                        <Tr>
+                          <Td p={2}>2</Td>
+                          <Td p={2}>Jay P</Td>
+                          <Td p={2}>-16</Td>
+                          <Td p={2}>
+                            <Button width="100%">View Team</Button>
+                          </Td>
+                        </Tr>
+                        <Tr>
+                          <Td p={2}>3</Td>
+                          <Td p={2}>Ethan K</Td>
+                          <Td p={2}>-15</Td>
+                          <Td p={2}>
+                            <Button width="100%">View Team</Button>
+                          </Td>
+                        </Tr>
+                        <Tr>
+                          <Td p={2}>4</Td>
+                          <Td p={2}>Ellis V</Td>
+                          <Td p={2}>-14</Td>
+                          <Td p={2}>
+                            <Button width="100%">View Team</Button>
+                          </Td>
+                        </Tr>
+                        <Tr>
+                          <Td p={2}>5</Td>
+                          <Td p={2}>John J</Td>
+                          <Td p={2}>-13</Td>
+                          <Td p={2}>
+                            <Button width="100%">View Team</Button>
+                          </Td>
+                        </Tr>
+                      </Tbody>
+                    </Table>
+                  </Stack>
+                </CardBody>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <Heading fontSize="medium">
+                    Season Standings
+                  </Heading>
+                </CardHeader>
+                <CardBody>
                 <Stack spacing={2}>
-                  <Table variant="simple">
-                    <Thead>
-                      <Tr>
-                        <Th p={2}>Rank</Th>
-                        <Th p={2}>Team</Th>
-                        <Th p={2}>Score</Th>
-                        <Th p={2}></Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      <Tr>
-                        <Td p={2}>1</Td>
-                        <Td p={2}>Kobe K</Td>
-                        <Td p={2}>-18</Td>
-                        <Td p={2}>
-                          <Button width="100%">View Team</Button>
-                        </Td>
-                      </Tr>
-                      <Tr>
-                        <Td p={2}>2</Td>
-                        <Td p={2}>Jay P</Td>
-                        <Td p={2}>-16</Td>
-                        <Td p={2}>
-                          <Button width="100%">View Team</Button>
-                        </Td>
-                      </Tr>
-                      <Tr>
-                        <Td p={2}>3</Td>
-                        <Td p={2}>Ethan K</Td>
-                        <Td p={2}>-15</Td>
-                        <Td p={2}>
-                          <Button width="100%">View Team</Button>
-                        </Td>
-                      </Tr>
-                      <Tr>
-                        <Td p={2}>4</Td>
-                        <Td p={2}>Ellis V</Td>
-                        <Td p={2}>-14</Td>
-                        <Td p={2}>
-                          <Button width="100%">View Team</Button>
-                        </Td>
-                      </Tr>
-                      <Tr>
-                        <Td p={2}>5</Td>
-                        <Td p={2}>John J</Td>
-                        <Td p={2}>-13</Td>
-                        <Td p={2}>
-                          <Button width="100%">View Team</Button>
-                        </Td>
-                      </Tr>
-                    </Tbody>
-                  </Table>
-                </Stack>
-              </CardBody>
-            </Card>
+                    <Table variant="simple">
+                      <Thead>
+                        <Tr>
+                          <Th p={2}>Rank</Th>
+                          <Th p={2}>Team</Th>
+                          <Th p={2}>Score</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        
+                        <Tr>
+                          <Td p={2}>1</Td>
+                          <Td p={2}>Jay P</Td>
+                          <Td p={2}>-145</Td>
+                        </Tr>
+                        <Tr>
+                          <Td p={2}>2</Td>
+                          <Td p={2}>Kobe K</Td>
+                          <Td p={2}>-125</Td>
+                        </Tr>
+                        <Tr>
+                          <Td p={2}>3</Td>
+                          <Td p={2}>Ellis V</Td>
+                          <Td p={2}>-122</Td>
+                        </Tr>
+                        <Tr>
+                          <Td p={2}>4</Td>
+                          <Td p={2}>Ethan K</Td>
+                          <Td p={2}>-110</Td>
+                        </Tr>
+                        <Tr>
+                          <Td p={2}>5</Td>
+                          <Td p={2}>John J</Td>
+                          <Td p={2}>-101</Td>
+                        </Tr>
+                      </Tbody>
+                    </Table>
+                  </Stack>
+                </CardBody>
+              </Card>
+            )}
           </Box>
 
           <Spacer mx={10} />
@@ -247,9 +318,9 @@ export default function index() {
                           <Text>{golfer.name}</Text>
                           <Text>${golfer.salary}m</Text>
                           <Flex>
-                            <Button fontSize="small" padding={2} colorScheme='blue' onClick={() => removeGolfer(golfer.id, "bench")}>Swap to Bench</Button>
+                            <Button colorScheme='blue' onClick={() => removeGolfer(golfer.id, "bench")}>Swap to Bench</Button>
                             <Spacer />
-                            <Button fontSize="small" padding={2} colorScheme='red' onClick={() => removeGolfer(golfer.id, "team")}>
+                            <Button colorScheme='red' onClick={() => removeGolfer(golfer.id, "team")}>
                               <FaTrash />
                             </Button>
                           </Flex>
@@ -282,9 +353,9 @@ export default function index() {
                           <Text>{golfer.name}</Text>
                           <Text>${golfer.salary}m</Text>
                           <Flex>
-                          <Button fontSize="small" padding={2} colorScheme='blue' onClick={() => removeGolfer(golfer.id, "bench")}>Swap to Team</Button>
+                          <Button colorScheme='blue' onClick={() => removeGolfer(golfer.id, "bench")}>Swap to Team</Button>
                           <Spacer />
-                            <Button fontSize="small" padding={2} colorScheme='red' onClick={() => removeGolfer(golfer.id, "bench")}>
+                            <Button colorScheme='red' onClick={() => removeGolfer(golfer.id, "bench")}>
                               <FaTrash />
                             </Button>
                           </Flex>
@@ -317,7 +388,7 @@ export default function index() {
               <FormControl>
                 <FormLabel>Select Golfer</FormLabel>
                 <Stack spacing={2}>
-                  {golfers.map((golfer) => {
+                  {sortedGolfers.map((golfer) => {
                     const isOnTeam = team.golfers.some(teamGolfer => teamGolfer.id === golfer.id);
                     const isOnBench = team.bench.some(benchGolfer => benchGolfer.id === golfer.id);
                     const shouldDisable = isOnTeam || isOnBench;

@@ -52,7 +52,7 @@ export const loader: LoaderFunction = async ({ request }) => {
       href: '/',
     },
     {
-      label: 'Settings',
+      label: 'Rules',
       href: '/',
     },
   ]
@@ -69,7 +69,23 @@ export const loader: LoaderFunction = async ({ request }) => {
         {
           label: 'Seasons',
           href: '/admin/seasons',
-        }
+        },
+        {
+          label: 'Golfers',
+          href: '/admin/golfers',
+        },
+        {
+          label: 'Teams',
+          href: '/admin/teams',
+        },
+        {
+          label: 'Events',
+          href: '/admin/events',
+        },
+        {
+          label: 'Results',
+          href: '/admin/results',
+        },
       ],
     },
     

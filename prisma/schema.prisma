@@ -72,11 +72,11 @@ model ToDo {
 // Green Quest Objects
 
 model Season {
-  id      String  @id @default(cuid())
-  name    String
-  members User[]  @relation("UserSeasons")
-  events  Event[] @relation("SeasonEvents")
-  teams   Team[]
+  id        String   @id @default(cuid())
+  name      String
+  members   User[]   @relation("UserSeasons")
+  events    Event[]  @relation("SeasonEvents")
+  teams     Team[]
   startDate DateTime
   endDate   DateTime
 
@@ -94,6 +94,8 @@ model Golfer {
   events       Event[]       @relation("EventGolfers")
   teams        Team[]        @relation("TeamGolfers")
   bench        Team[]        @relation("TeamBench")
+  espnId       String?
+  pictureLink  String?
 }
 
 model Event {
@@ -106,16 +108,21 @@ model Event {
   seasonId     String
   performances Performance[]
   results      Result[]
+  espnId       String?
+  status       String? // Scheduled, In Progress, Completed
+  location     String?
 }
 
 model Performance {
-  id          String  @id @default(cuid())
-  golfer      Golfer  @relation(fields: [golferId], references: [id])
+  id          String   @id @default(cuid())
+  golfer      Golfer   @relation(fields: [golferId], references: [id])
   golferId    String
-  event       Event   @relation(fields: [eventId], references: [id])
+  event       Event    @relation(fields: [eventId], references: [id])
+  result      Result[] @relation("ResultPerformances")
   eventId     String
-  status      String? // Missed Cut, Withdrawn, etc.
-  day         Int     @default(1) // Which day of the 4 is this performance for
+  status      String? 
+  teeTime     DateTime?
+  day         Int      @default(1) // Which day of the 4 is this performance for
   score       Int // Total score for the event, could be under/over par etc.
   holesPlayed Int // Total holes played in the event
 }
@@ -128,16 +135,14 @@ model Team {
   season   Season   @relation(fields: [seasonId], references: [id])
   golfers  Golfer[] @relation("TeamGolfers")
   bench    Golfer[] @relation("TeamBench")
-  results  Result[]
 }
 
 model Result {
-  id      String @id @default(cuid())
-  event   Event  @relation(fields: [eventId], references: [id])
-  eventId String
-  team    Team   @relation(fields: [teamId], references: [id])
-  teamId  String
-  user    User   @relation(fields: [userId], references: [id])
-  userId  String
-  points  Int // Points earned in the event based on performances and rule settings
+  id           String        @id @default(cuid())
+  event        Event         @relation(fields: [eventId], references: [id])
+  eventId      String
+  performances Performance[] @relation("ResultPerformances")
+  user         User          @relation(fields: [userId], references: [id])
+  userId       String
+  points       Int // Points earned in the event based on performances and rule settings
 }
