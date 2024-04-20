@@ -94,7 +94,7 @@ model Golfer {
   events       Event[]       @relation("EventGolfers")
   teams        Team[]        @relation("TeamGolfers")
   bench        Team[]        @relation("TeamBench")
-  espnId       String?
+  espnId       String?       @unique
   pictureLink  String?
 }
 
@@ -125,6 +125,8 @@ model Performance {
   day         Int      @default(1) // Which day of the 4 is this performance for
   score       Int // Total score for the event, could be under/over par etc.
   holesPlayed Int // Total holes played in the event
+
+  @@unique([golferId, eventId, day], name: "golferId_eventId_day")
 }
 
 model Team {

@@ -21,7 +21,7 @@ import { withEmotionCache } from '@emotion/react'
 import { ServerStyleContext, ClientStyleContext } from './context'
 import { theme } from './theme'
 
-export const meta: V2_MetaFunction = () => [{ title: "Green Quest" }]
+export const meta: V2_MetaFunction = () => [{ title: "Green Draft" }]
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: 'stylesheet', href: cssBundleHref }] : []),

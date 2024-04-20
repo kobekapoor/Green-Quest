@@ -4,7 +4,7 @@ import type { DataFunctionArgs } from '@remix-run/node';
 import { Form, useLoaderData } from '@remix-run/react';
 import { getUser } from '~/utils/auth.server';
 import { prisma } from '~/utils/prisma.server';
-import { Box, Button, Card, CardBody, CardFooter, CardHeader, Checkbox, Flex, FormControl, FormLabel, Grid, GridItem, HStack, Heading, Input, Spacer, Stack, Table, Tbody, Td, Text, Textarea, Th, Thead, Tr, useBreakpointValue } from '@chakra-ui/react';
+import { Box, Button, Card, CardBody, CardFooter, CardHeader, Checkbox, Flex, FormControl, FormLabel, Grid, GridItem, HStack, Heading, Input, Spacer, Stack, Table, Tbody, Td, Text, Textarea, Th, Thead, Tr, useBreakpointValue, Image } from '@chakra-ui/react';
 import { env } from 'process'
 import type { ToDo } from '@prisma/client';
 import { z } from 'zod';
@@ -62,6 +62,7 @@ export const loader = async (args: DataFunctionArgs) => {
       id: true,
       name: true,
       salary: true,
+      pictureLink: true,
     },
   });
 
@@ -315,8 +316,17 @@ export default function index() {
                     <Card>
                       <CardBody>
                         <Stack spacing={4}>
+                          <HStack spacing={8}>
+                          <Flex boxSize={32} backgroundColor="white" borderRadius="full" overflow="hidden" alignContent="center">
+                            <Image src={golfer.pictureLink} alt={golfer.name} width={32} objectFit="cover" objectPosition="bottom" />
+                          </Flex>
+                          <Stack>
                           <Text>{golfer.name}</Text>
-                          <Text>${golfer.salary}m</Text>
+                            <Text>Position: 1</Text>
+                            <Text>Rank: 1</Text>
+                            <Text>${golfer.salary}m</Text>
+                          </Stack>
+                          </HStack>
                           <Flex>
                             <Button colorScheme='blue' onClick={() => removeGolfer(golfer.id, "bench")}>Swap to Bench</Button>
                             <Spacer />
@@ -350,8 +360,19 @@ export default function index() {
                     <Card>
                       <CardBody>
                         <Stack spacing={4}>
-                          <Text>{golfer.name}</Text>
-                          <Text>${golfer.salary}m</Text>
+                        
+                          <HStack spacing={8}>
+                          <Flex boxSize={32} backgroundColor="white" borderRadius="full" overflow="hidden" alignContent="center">
+                            <Image src={golfer.pictureLink} alt={golfer.name} width={32} objectFit="cover" objectPosition="bottom" />
+                          </Flex>
+                          <Stack>
+                            <Text>{golfer.name}</Text>
+                            <Text>Position: 1</Text>
+                            <Text>Rank: 1</Text>
+                            <Text>${golfer.salary}m</Text>
+                          </Stack>
+                          </HStack>
+                          
                           <Flex>
                           <Button colorScheme='blue' onClick={() => removeGolfer(golfer.id, "bench")}>Swap to Team</Button>
                           <Spacer />
