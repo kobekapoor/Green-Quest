@@ -60,7 +60,6 @@ export const loader: LoaderFunction = async ({ request }) => {
   const adminNavItems: Array<NavItem> = [
     {
       label: 'Admin',
-      href: '/admin/seasons',
       children: [
         {
           label: 'Users',
