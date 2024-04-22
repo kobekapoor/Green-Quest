@@ -48,6 +48,7 @@ export const loader = async (args: DataFunctionArgs) => {
       golfers: true,
       performances: true,
       status: true,
+      espnId: true,
     },
     orderBy: {
       name: 'asc',
@@ -100,7 +101,7 @@ export const action = async (args: DataFunctionArgs) => {
       espnId: tournament.id,
       location: tournament.locations[0],
       seasonId: season.id,
-      status: tournament.status,
+      status: tournament.fullStatus.type.name,
     }
   })
 
@@ -114,14 +115,14 @@ export const action = async (args: DataFunctionArgs) => {
     data: eventsToCreate,
   });
 
-  await prisma.event.updateMany({
-    where: {
-      espnId: {
-        in: eventsToUpdate.map((event: any) => event.espnId),
+  for (const event of eventsToUpdate) {
+    await prisma.event.update({
+      where: {
+        espnId: event.espnId,
       },
-    },
-    data: eventsToUpdate,
-  });
+      data: event,
+    });
+  }
 
 
   return redirect(`/admin/events`);

@@ -4,7 +4,7 @@ import type { DataFunctionArgs } from '@remix-run/node';
 import { Form, useLoaderData } from '@remix-run/react';
 import { getUser } from '~/utils/auth.server';
 import { prisma } from '~/utils/prisma.server';
-import { Box, Button, Card, CardBody, CardFooter, CardHeader, Checkbox, Flex, FormControl, FormLabel, Grid, GridItem, HStack, Heading, Input, Spacer, Stack, Table, Tbody, Td, Text, Textarea, Th, Thead, Tr, useBreakpointValue, Image } from '@chakra-ui/react';
+import { Box, Button, Card, CardBody, CardFooter, CardHeader, Checkbox, Flex, FormControl, FormLabel, Grid, GridItem, HStack, Heading, Input, Spacer, Stack, Table, Tbody, Td, Text, Textarea, Th, Thead, Tr, useBreakpointValue, Image, SimpleGrid } from '@chakra-ui/react';
 import { env } from 'process'
 import type { ToDo } from '@prisma/client';
 import { z } from 'zod';
@@ -15,14 +15,31 @@ import { ValidatedInput } from '~/components/ValidatedInput';
 import { ValidatedTextarea } from '~/components/ValidatedTextarea';
 import { SubmitButton } from '~/components/SubmitButton';
 import { useState } from 'react';
-import { Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, ModalFooter } from "@chakra-ui/react";
+import { Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, ModalFooter, useColorModeValue } from "@chakra-ui/react";
 import { ValidatedCheckbox } from '~/components/ValidatedCheckbox';
 import { set } from 'date-fns';
 import { FaTrash } from 'react-icons/fa';
+import { css, Global } from '@emotion/react';
 
 export function meta({data}) {
   return [{ title: `${data.siteName} - Home` }]
 }
+
+// Define global styles for animations
+const glowAnimation = css`
+  @keyframes glow {
+    0% {
+      box-shadow: 0 0 12px rgba(0, 255, 0, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 12px rgba(0, 255, 0, 0.8);
+    }
+    100% {
+      box-shadow: 0 0 12px rgba(0, 255, 0, 0.2);
+    }
+  }
+`;
+
 
 const validator = withZod(
   z.object({
@@ -45,32 +62,119 @@ export const loader = async (args: DataFunctionArgs) => {
   if (!user) {
     throw redirect('/signin');
   }
-
-  const team = await prisma.team.findFirst({
-    where: {
-      userId: user.id,
-    },
-    select: {
-      id: true,
-      golfers: true,
-      bench: true,
-    },
-  });
-
-  const golfers = await prisma.golfer.findMany({
+  
+  const events = await prisma.event.findMany({
     select: {
       id: true,
       name: true,
-      salary: true,
-      pictureLink: true,
+      startDate: true,
+      endDate: true,
+    }
+  });
+  
+  // Sort the events by the closest endDate to today
+  const sortedEvents = events.sort((a, b) => 
+    Math.abs(a.endDate - new Date()) - Math.abs(b.endDate - new Date())
+  );
+  
+  // Get the event with the closest endDate
+  const currentEvent = sortedEvents[0];
+
+  console.log("Current Event: ", currentEvent)
+
+  const event = await prisma.event.findFirst({
+    where: {
+      id: currentEvent.id,
     },
+    orderBy: {
+      endDate: 'asc',
+    },
+    select: {
+      id: true,
+      name: true,
+      startDate: true,
+      endDate: true,
+      golfers: {
+        select: {
+          id: true,
+          name: true,
+          salary: true,
+          pictureLink: true,
+          performances: {
+            select: {
+              id: true,
+              status: true,
+              teeTime: true,
+              day: true,
+              score: true,
+              holesPlayed: true,
+            },
+            where: {
+              eventId: currentEvent.id,
+            },
+          },
+        }
+      },
+      teams: {
+        select: {
+          id: true,
+          golfers: {
+            select: {
+              id: true,
+              name: true,
+              salary: true,
+              pictureLink: true,
+              performances: {
+                select: {
+                  id: true,
+                  status: true,
+                  teeTime: true,
+                  day: true,
+                  score: true,
+                  holesPlayed: true,
+                },
+                where: {
+                  eventId: currentEvent.id,
+                },
+              },
+            },
+          },
+          bench: {
+            select: {
+              id: true,
+              name: true,
+              salary: true,
+              pictureLink: true,
+              performances: {
+                select: {
+                  id: true,
+                  status: true,
+                  teeTime: true,
+                  day: true,
+                  score: true,
+                  holesPlayed: true,
+                },
+                where: {
+                  eventId: currentEvent.id,
+                },
+              },
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      },
+    }
   });
 
   const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
 
-  console.log("TEAM: ", team)
-  
-  return json({ user, siteName, team, golfers });
+  return json({ user, siteName, event });
 };
 
 export async function action(args: DataFunctionArgs) {
@@ -87,8 +191,13 @@ export async function action(args: DataFunctionArgs) {
 }
 
 export default function index() {
-  const { user, team, golfers } = useLoaderData<typeof loader>()
+  const { user, event } = useLoaderData<typeof loader>()
   const isMobile = useBreakpointValue({ base: true, md: false });
+
+  const [team, setTeam] = useState(event?.teams.find(team => team.user.id === user.id));
+  const golfers = event?.golfers;
+
+  console.log('Event: ', event);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGolfer, setSelectedGolfer] = useState<string | null>(null);
@@ -162,11 +271,12 @@ export default function index() {
   const sortedGolfers = golfers.sort((a, b) => b.salary - a.salary);
 
   return (
-    <Box width="100%">
+    <Box width="100%" p={6}>
+      <Global styles={glowAnimation} />
       <Stack spacing={10}>
         <Heading size="lg">Welcome, {user.firstName}</Heading>
-        <Flex dir={["row", "column"]}>
-          <Box width="33%">
+        <Flex direction={["column",  "column", "row"]}>
+          <Box width={["100%", "100%", "33%"]}>
             <Heading fontSize="large">Leaderboard</Heading>
             <Flex marginY={6} dir="row">
               <Button
@@ -209,7 +319,7 @@ export default function index() {
                           <Td p={2}>Kobe K</Td>
                           <Td p={2}>-18</Td>
                           <Td p={2}>
-                            <Button width="100%">View Team</Button>
+                          <Button fontSize={[12, 12, 16]} width="100%">Team</Button>
                           </Td>
                         </Tr>
                         <Tr>
@@ -217,7 +327,7 @@ export default function index() {
                           <Td p={2}>Jay P</Td>
                           <Td p={2}>-16</Td>
                           <Td p={2}>
-                            <Button width="100%">View Team</Button>
+                          <Button fontSize={[12, 12, 16]} width="100%">Team</Button>
                           </Td>
                         </Tr>
                         <Tr>
@@ -225,7 +335,7 @@ export default function index() {
                           <Td p={2}>Ethan K</Td>
                           <Td p={2}>-15</Td>
                           <Td p={2}>
-                            <Button width="100%">View Team</Button>
+                          <Button fontSize={[12, 12, 16]} width="100%">Team</Button>
                           </Td>
                         </Tr>
                         <Tr>
@@ -233,7 +343,7 @@ export default function index() {
                           <Td p={2}>Ellis V</Td>
                           <Td p={2}>-14</Td>
                           <Td p={2}>
-                            <Button width="100%">View Team</Button>
+                          <Button fontSize={[12, 12, 16]} width="100%">Team</Button>
                           </Td>
                         </Tr>
                         <Tr>
@@ -241,7 +351,7 @@ export default function index() {
                           <Td p={2}>John J</Td>
                           <Td p={2}>-13</Td>
                           <Td p={2}>
-                            <Button width="100%">View Team</Button>
+                            <Button fontSize={[12, 12, 16]} width="100%">Team</Button>
                           </Td>
                         </Tr>
                       </Tbody>
@@ -301,32 +411,87 @@ export default function index() {
             )}
           </Box>
 
-          <Spacer mx={10} />
+          <Spacer mx={10} my={[6, 6, 0]} />
 
-          <Box width="62%">
+          <Box width={["100%", "100%", "62%"]}>
             <Box>
               <HStack>
                 <Heading size="md" mb={6}>Team</Heading>
                 <Spacer />
                 <Text>Remaining Salary: ${remainingSalary}m</Text>
               </HStack>
-              <Grid templateColumns="repeat(2, 1fr)" gap={4}>
-                {team.golfers.map((golfer) => (
+              <SimpleGrid minChildWidth='340px' gap={4}>
+                {team.golfers.map((golfer) => {
+
+                const currentStatus = golfer.performances[golfer.performances.length - 1].status;
+
+                  // Optional: Define the glow style conditionally
+                const glowStyle = currentStatus === "STATUS_IN_PROGRESS" ? {
+                  animation: 'glow 3s ease-in-out infinite',
+                } : {};
+
+                return (
                   <GridItem key={golfer.id}>
                     <Card>
                       <CardBody>
                         <Stack spacing={4}>
+                          
                           <HStack spacing={8}>
-                          <Flex boxSize={32} backgroundColor="white" borderRadius="full" overflow="hidden" alignContent="center">
-                            <Image src={golfer.pictureLink} alt={golfer.name} width={32} objectFit="cover" objectPosition="bottom" />
-                          </Flex>
-                          <Stack>
-                          <Text>{golfer.name}</Text>
-                            <Text>Position: 1</Text>
-                            <Text>Rank: 1</Text>
-                            <Text>${golfer.salary}m</Text>
-                          </Stack>
+                            <Flex   boxShadow="inset 0 0 12px rgba(0, 0, 0, 0.8)" 
+                              border="6px solid" // Sets the border thickness
+                              borderColor={currentStatus === "STATUS_IN_PROGRESS" ? "green.300" : "blue.300"} // Sets the border color based on the current status
+                            // This adds an inner shadow
+                              style={glowStyle}
+  boxSize={32} backgroundColor="white" borderRadius="full" overflow="hidden" alignContent="center">
+                              <Image src={golfer.pictureLink} alt={golfer.name} width={32} objectFit="cover" objectPosition="bottom" />
+                            </Flex>
+                            <Stack>
+                              <Text fontSize="larger" fontWeight="bold">{golfer.name}</Text>
+                              <Text fontSize="large" fontStyle="italic">${golfer.salary}m</Text>
+                            </Stack>
                           </HStack>
+                            
+                            <Table size="small" fontSize="medium">
+                              <Tr>
+                                <Th>Round</Th>
+                                <Th>Status</Th>
+                                <Th>Score</Th>
+                              </Tr>
+                              {golfer.performances.map((performance) => {
+                                console.log('Performance', performance);
+                                let timeToTee: number | undefined;
+                                if (performance.teeTime) {
+                                  timeToTee = new Date().getTime() - new Date(performance.teeTime).getTime();
+                                }
+
+                                if(performance.status === 'STATUS_FINISH'){
+                                return (
+                                <Tr key={performance.id}>
+                                  <Td>{performance.day}</Td>
+                                  <Td>Completed</Td>
+                                  <Td>{performance.score > 0 ? `+${performance.score}` : performance.score}</Td>
+                                </Tr>
+                                )
+                              } else if(performance.status === 'STATUS_IN_PROGRESS'){
+                                return(
+                                  <Tr key={performance.id}>
+                                  <Td>{performance.day}</Td>
+                                  <Td>Thru {performance.holesPlayed}</Td>
+                                  <Td>{performance.score > 0 ? `+${performance.score}` : performance.score}</Td>
+                                </Tr>
+                                )
+                              } else {
+                                return (
+                                  <Tr key={performance.id}>
+                                    <Td>{performance.day}</Td>
+                                    <Td>Teeing off in {timeToTee}</Td>
+                                    <Td></Td>
+                                  </Tr>
+                                )
+                              }
+                              })}
+                            </Table>
+
                           <Flex>
                             <Button colorScheme='blue' onClick={() => removeGolfer(golfer.id, "bench")}>Swap to Bench</Button>
                             <Spacer />
@@ -338,7 +503,8 @@ export default function index() {
                       </CardBody>
                     </Card>
                   </GridItem>
-                ))}
+                )
+                })}
                 {Array.from({ length: 4 - team.golfers.length }).map((_, index) => (
                   <GridItem key={index}>
                     <Card>
@@ -349,33 +515,48 @@ export default function index() {
                     </Card>
                   </GridItem>
                 ))}
-              </Grid>
+              </SimpleGrid>
             </Box>
 
             <Box mt={6}>
               <Heading size="md" mb={6}>Bench</Heading>
-              <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+              <SimpleGrid  minChildWidth='340px' gap={4}>
                 {team.bench.map((golfer) => (
                   <GridItem key={golfer.id}>
                     <Card>
                       <CardBody>
                         <Stack spacing={4}>
-                        
+                          <Flex direction="row">
+                            <Text fontSize="large">{golfer.name}</Text>
+                            <Spacer />
+                            <Text fontSize="medium">${golfer.salary}m</Text>
+                          </Flex>
+                          
                           <HStack spacing={8}>
-                          <Flex boxSize={32} backgroundColor="white" borderRadius="full" overflow="hidden" alignContent="center">
+                          <Flex   boxShadow="inset 0 0 12px rgba(0, 0, 0, 0.8)" 
+                            border="6px solid" // Sets the border thickness
+                            borderColor="blue.300" // Sets the border color, adjust as needed
+                          // This adds an inner shadow
+ boxSize={32} backgroundColor="white" borderRadius="full" overflow="hidden" alignContent="center">
                             <Image src={golfer.pictureLink} alt={golfer.name} width={32} objectFit="cover" objectPosition="bottom" />
                           </Flex>
                           <Stack>
-                            <Text>{golfer.name}</Text>
-                            <Text>Position: 1</Text>
-                            <Text>Rank: 1</Text>
-                            <Text>${golfer.salary}m</Text>
+                          
+                            {golfer.performances.map((performance) => {
+                              if (performance.status === 'STATUS_FINISH') {
+                                return (
+                                  <Text key={performance.id}>Round {performance.day}: {performance.score > 0 ? `+${performance.score}` : performance.score}</Text>
+                                );
+                              } else {
+                                return <Text key={performance.id}>Round {performance.day}: Not Started</Text>;
+                              }
+                            })}
+                            
                           </Stack>
                           </HStack>
-                          
                           <Flex>
-                          <Button colorScheme='blue' onClick={() => removeGolfer(golfer.id, "bench")}>Swap to Team</Button>
-                          <Spacer />
+                            <Button colorScheme='blue' onClick={() => removeGolfer(golfer.id, "team")}>Swap to Team</Button>
+                            <Spacer />
                             <Button colorScheme='red' onClick={() => removeGolfer(golfer.id, "bench")}>
                               <FaTrash />
                             </Button>
@@ -395,7 +576,7 @@ export default function index() {
                     </Card>
                   </GridItem>
                 ))}
-              </Grid>
+              </SimpleGrid>
             </Box>
           </Box>
         </Flex>

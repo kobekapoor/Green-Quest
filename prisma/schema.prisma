@@ -37,7 +37,6 @@ model User {
   toDos ToDo[]
 
   seasons Season[] @relation("UserSeasons")
-  Result  Result[]
   Team    Team[]
 
   @@index([email])
@@ -108,10 +107,10 @@ model Event {
   season       Season        @relation("SeasonEvents", fields: [seasonId], references: [id])
   seasonId     String
   performances Performance[]
-  results      Result[]
-  espnId       String?
+  espnId       String?       @unique
   status       String? // Scheduled, In Progress, Completed
   location     String?
+  teams        Team[]
 }
 
 model Performance {
@@ -119,7 +118,6 @@ model Performance {
   golfer      Golfer   @relation(fields: [golferId], references: [id])
   golferId    String
   event       Event    @relation(fields: [eventId], references: [id])
-  result      Result[] @relation("ResultPerformances")
   eventId     String
   status      String? 
   teeTime     DateTime?
@@ -138,14 +136,7 @@ model Team {
   season   Season   @relation(fields: [seasonId], references: [id])
   golfers  Golfer[] @relation("TeamGolfers")
   bench    Golfer[] @relation("TeamBench")
-}
-
-model Result {
-  id           String        @id @default(cuid())
-  event        Event         @relation(fields: [eventId], references: [id])
-  eventId      String
-  performances Performance[] @relation("ResultPerformances")
-  user         User          @relation(fields: [userId], references: [id])
-  userId       String
-  points       Int // Points earned in the event based on performances and rule settings
+  eventId  String?
+  event    Event?   @relation(fields: [eventId], references: [id])
+  score    Int      @default(0)
 }

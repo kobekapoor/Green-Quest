@@ -58,7 +58,9 @@ export const loader = async (args: DataFunctionArgs) => {
     },
   })
 
-  const leaderboard = event.performances.reduce((acc, performance) => {
+  const leaderboard: any[] = [];
+
+  event.performances.reduce((acc, performance) => {
     const { golfer, score, status, teeTime, day } = performance;
     const { id, name, espnId } = golfer;
     const existingGolfer = acc.find((g) => g.id === id);
@@ -75,9 +77,9 @@ export const loader = async (args: DataFunctionArgs) => {
       });
     }
     return acc;
-  }, []);
+  }, leaderboard);
 
-  if (!event) throw new Error('User not found')
+  if (!event) throw new Error('User not found');
 
   return json({
     event,
@@ -116,12 +118,12 @@ export const action = async (args: DataFunctionArgs) => {
       golferId: golfers.find((golfer) => golfer.espnId === competitor.id)?.id,
       eventId: args.params.id,
       day: line.period,
-      status: line.value ? 'completed' : new Date() > new Date(line.teeTime) ? 'inprogress' : 'notStarted',
+      status: competitor.status.period === line.period ? competitor.status.type.name : 'STATUS_FINISH',
       teeTime: line.teeTime ? new Date(line.teeTime) : null,
       score: line.displayValue ? (line.displayValue === '+' ? parseInt(line.displayValue + line.value) :
          line.displayValue === '-' ? parseInt(line.displayValue + line.value) :
          line.displayValue === 'E' ? 0 : parseInt(line.displayValue)) : 0,
-      holesPlayed: 18
+      holesPlayed: competitor.status.period === line.period ? competitor.status.hole : 18,
     })),
   }));
 
@@ -169,7 +171,7 @@ if (leaderboard) {
             status: line.status,
             teeTime: line.teeTime ? new Date(line.teeTime) : null,
             score: line.score,
-            holesPlayed: 18, // Assuming 18 holes per round, if different, adjust accordingly
+            holesPlayed: line.holesPlayed,
           },
         });
       } else {
@@ -181,7 +183,7 @@ if (leaderboard) {
           status: line.status,
           teeTime: line.teeTime ? new Date(line.teeTime) : null,
           score: line.score,
-          holesPlayed: 18, // Assuming 18 holes per round
+          holesPlayed: line.holesPlayed,
         });
       }
     }
@@ -264,10 +266,10 @@ export default function AdminEventDetails() {
                 {sortedLeaderboard.map((golfer) => (
                   <Tr key={golfer.id}>
                     <Td>{golfer.name}</Td>
-                    <Td textAlign="right">{golfer.linescores.find((line) => line.round === 1)?.status === 'completed' ? golfer.linescores.find((line) => line.round === 1).score : 'Not Started'}</Td>
-                    <Td textAlign="right">{golfer.linescores.find((line) => line.round === 2)?.status === 'completed' ? golfer.linescores.find((line) => line.round === 2).score : 'Not Started'}</Td>
-                    <Td textAlign="right">{golfer.linescores.find((line) => line.round === 3)?.status === 'completed' ? golfer.linescores.find((line) => line.round === 3).score : 'Not Started'}</Td>
-                    <Td textAlign="right">{golfer.linescores.find((line) => line.round === 4)?.status === 'completed' ? golfer.linescores.find((line) => line.round === 4).score : 'Not Started'}</Td>
+                    <Td textAlign="right">{golfer.linescores.find((line) => line.round === 1)?.status === 'STATUS_FINISH' ? golfer.linescores.find((line) => line.round === 1).score : golfer.linescores.find((line) => line.round === 1)?.status}</Td>
+                    <Td textAlign="right">{golfer.linescores.find((line) => line.round === 2)?.status === 'STATUS_FINISH' ? golfer.linescores.find((line) => line.round === 2).score : golfer.linescores.find((line) => line.round === 2)?.status}</Td>
+                    <Td textAlign="right">{golfer.linescores.find((line) => line.round === 3)?.status === 'STATUS_FINISH' ? golfer.linescores.find((line) => line.round === 3).score : golfer.linescores.find((line) => line.round === 3)?.status}</Td>
+                    <Td textAlign="right">{golfer.linescores.find((line) => line.round === 4)?.status === 'STATUS_FINISH' ? golfer.linescores.find((line) => line.round === 4).score : golfer.linescores.find((line) => line.round === 4)?.status}</Td>
                     <Td textAlign="right">{golfer.totalScore}</Td>
                   </Tr>
                 ))}

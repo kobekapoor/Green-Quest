@@ -19,6 +19,7 @@ import {
   InputRightElement,
   Icon,
   Button,
+  Select,
 } from '@chakra-ui/react'
 import { Link, useLoaderData, useNavigate } from '@remix-run/react'
 import { AddIcon, ChevronRightIcon } from '@chakra-ui/icons'
@@ -53,9 +54,26 @@ export const loader = async (args: DataFunctionArgs) => {
     },
   })
 
+  const events = await prisma.event.findMany({
+    select: {
+      id: true,
+      name: true,
+      startDate: true,
+      endDate: true,
+      golfers: true,
+      performances: true,
+      status: true,
+      espnId: true,
+    },
+    orderBy: {
+      name: 'asc',
+    },
+  })
+
   return json({
     golfers,
     siteName,
+    events,
     breadcrumbs: [
       {
         label: 'Golfers',
@@ -92,6 +110,11 @@ export const action = async (args: DataFunctionArgs) => {
       salary: 0,
       espnId: player.athlete.id,
       pictureLink: player.athlete?.headshot?.href,
+      events: {
+        connect: {
+          id: tournamentId,
+        },
+      },
     };
   });
 
@@ -131,6 +154,11 @@ export const action = async (args: DataFunctionArgs) => {
       },
       data: {
         salary: new Decimal(golfer.salary || 0),
+        events: {
+          connect: {
+            id: tournamentId,
+          },
+        },
       },
     });
   }
@@ -139,7 +167,7 @@ export const action = async (args: DataFunctionArgs) => {
 }
 
 export default function AdminGolfers() {
-  const { golfers } = useLoaderData<typeof loader>()
+  const { golfers, events } = useLoaderData<typeof loader>()
   const navigate = useNavigate()
   const [tournamentId, setTournamentId] = useState('')
 
@@ -172,7 +200,11 @@ export default function AdminGolfers() {
         <InputGroup width="50%">
           <Input placeholder="Search" />
         </InputGroup>
-        <Input width="25%" placeholder="TournamentID" onChange={(e) => setTournamentId(e.target.value)}></Input>
+        <Select ml={2} width="25%" placeholder="Select event" onChange={(e) => setTournamentId(e.target.value)}>
+          {events.map(event => (
+             <option key={event.id} value={event.espnId}>{event.name}</option>
+          ))}
+        </Select>
         <Button width="20%" onClick={() => handleRefreshGolfers()} colorScheme={'blue'}>Refresh Golfers</Button>
       </Flex>
       <Card>
