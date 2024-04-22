@@ -1,11 +1,12 @@
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["rhel-openssl-1.0.x", "darwin-arm64"]
+  provider = "prisma-client-js"
+  binaryTargets = ["rhel-openssl-1.0.x", "rhel-openssl-3.0.x", "darwin-arm64", "debian-openssl-1.1.x"]
 }
 
 model Session {
