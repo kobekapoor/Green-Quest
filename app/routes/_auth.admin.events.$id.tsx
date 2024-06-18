@@ -14,7 +14,7 @@ import { ValidatedSelect } from '~/components/ValidatedSelect'
 import { SubmitButton } from '~/components/SubmitButton'
 import { getUser } from '~/utils/auth.server'
 
-export function meta({data}) {
+export function meta({data}: {data: any}) {
   return [{ title: `${data.siteName} - Event Details` }]
 }
 
@@ -60,6 +60,8 @@ export const loader = async (args: DataFunctionArgs) => {
 
   const leaderboard: any[] = [];
 
+  if (!event) throw new Error('Event not found');
+
   event.performances.reduce((acc, performance) => {
     const { golfer, score, status, teeTime, day } = performance;
     const { id, name, espnId } = golfer;
@@ -79,7 +81,7 @@ export const loader = async (args: DataFunctionArgs) => {
     return acc;
   }, leaderboard);
 
-  if (!event) throw new Error('User not found');
+  
 
   return json({
     event,
@@ -101,33 +103,56 @@ export const loader = async (args: DataFunctionArgs) => {
 
 export const action = async (args: DataFunctionArgs) => {
 
-  const golfers = await prisma.golfer.findMany({
-    select: {
-      id: true,
-      espnId: true,
-    },
-  });
+  const [golfers, leaderboardData] = await Promise.all([
+    prisma.golfer.findMany({
+      select: {
+        id: true,
+        espnId: true,
+        performances: {
+          select: {
+            id: true,
+            day: true,
+            eventId: true,
+            golfer: {
+              select: {
+                espnId: true,
+              },
+            }
+          },
+          where: {
+            eventId: args.params.id,
+          },
+        },
+      },
+      // where: {
+      //   OR: [
+      //     { teams: { some: { eventId: args.params.id } } },
+      //     { bench: { some: { eventId: args.params.id } } },
+      //   ],
+      // },
+    }),
+    fetch(`https://site.web.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga&region=au&lang=en&event=${args.params.id}&showAirings=buy%2Clive&buyWindow=1m`).then(res => res.json())
+  ]);
 
-  const response = await fetch(`https://site.web.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga&region=au&lang=en&event=${args.params.id}&showAirings=buy%2Clive&buyWindow=1m`);
-  const data = await response.json();
+  const leaderboard = leaderboardData?.events[0].competitions[0].competitors
+    .filter((competitor: any) => golfers.some((golfer) => golfer.espnId === competitor.id))
+    .map((competitor: any) => ({
+      id: competitor.id,
+      name: competitor.athlete.displayName,
+      linescores: competitor.linescores.map((line: any) => ({
+        golferId: golfers.find((golfer) => golfer.espnId === competitor.id)?.id,
+        eventId: args.params.id,
+        day: line.period,
+        status: competitor.status.period === line.period ? competitor.status.type.name : 'STATUS_FINISH',
+        teeTime: line.teeTime ? new Date(line.teeTime) : null,
+        score: line.displayValue ? (line.displayValue === '+' ? parseInt(line.displayValue + line.value) :
+           line.displayValue === '-' ? parseInt(line.displayValue + line.value) :
+           line.displayValue === 'E' ? 0 : parseInt(line.displayValue)) : 0,
+        holesPlayed: competitor.status.period === line.period ? competitor.status.hole : 18,
+      })),
+    }));
 
-  const leaderboard = data?.events[0].competitions[0].competitors.map((competitor: any) => ({
-    id: competitor.id,
-    name: competitor.athlete.displayName,
-    linescores: competitor.linescores.map((line: any) => ({
-      golferId: golfers.find((golfer) => golfer.espnId === competitor.id)?.id,
-      eventId: args.params.id,
-      day: line.period,
-      status: competitor.status.period === line.period ? competitor.status.type.name : 'STATUS_FINISH',
-      teeTime: line.teeTime ? new Date(line.teeTime) : null,
-      score: line.displayValue ? (line.displayValue === '+' ? parseInt(line.displayValue + line.value) :
-         line.displayValue === '-' ? parseInt(line.displayValue + line.value) :
-         line.displayValue === 'E' ? 0 : parseInt(line.displayValue)) : 0,
-      holesPlayed: competitor.status.period === line.period ? competitor.status.hole : 18,
-    })),
-  }));
-
-
+  console.log("Leaderboard: ", leaderboard)
 
 // Create/update performance objects based on leaderboard
 if (leaderboard) {
@@ -135,22 +160,11 @@ if (leaderboard) {
   const updates = [];
   const creates = [];
 
-  const performances = await prisma.performance.findMany({
-    where: {
-      eventId: args.params.id,
-    },
-    select: {
-      id: true,
-      golferId: true,
-      golfer: {
-        select: {
-          espnId: true,
-        },
-      },
-      day: true,
-    },
-  });
-
+  const performances = golfers.reduce((acc, golfer) => {
+    acc.push(...golfer.performances);
+    return acc;
+  }
+  , []);
 
   for (const competitor of leaderboard) {
     const existingPerformances = performances.filter(perf => perf.golfer.espnId === competitor.id);

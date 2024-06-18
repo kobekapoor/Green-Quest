@@ -1,11 +1,11 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["rhel-openssl-1.0.x", "rhel-openssl-3.0.x", "darwin-arm64", "debian-openssl-1.1.x"]
 }
 
@@ -114,14 +114,14 @@ model Event {
 }
 
 model Performance {
-  id          String   @id @default(cuid())
-  golfer      Golfer   @relation(fields: [golferId], references: [id])
+  id          String    @id @default(cuid())
+  golfer      Golfer    @relation(fields: [golferId], references: [id])
   golferId    String
-  event       Event    @relation(fields: [eventId], references: [id])
+  event       Event     @relation(fields: [eventId], references: [id])
   eventId     String
-  status      String? 
+  status      String?
   teeTime     DateTime?
-  day         Int      @default(1) // Which day of the 4 is this performance for
+  day         Int       @default(1) // Which day of the 4 is this performance for
   score       Int // Total score for the event, could be under/over par etc.
   holesPlayed Int // Total holes played in the event
 
@@ -129,14 +129,15 @@ model Performance {
 }
 
 model Team {
-  id       String   @id @default(cuid())
-  user     User     @relation(fields: [userId], references: [id])
-  userId   String
-  seasonId String
-  season   Season   @relation(fields: [seasonId], references: [id])
-  golfers  Golfer[] @relation("TeamGolfers")
-  bench    Golfer[] @relation("TeamBench")
-  eventId  String?
-  event    Event?   @relation(fields: [eventId], references: [id])
-  score    Int      @default(0)
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  seasonId    String
+  season      Season   @relation(fields: [seasonId], references: [id])
+  golfers     Golfer[] @relation("TeamGolfers")
+  bench       Golfer[] @relation("TeamBench")
+  eventId     String?
+  event       Event?   @relation(fields: [eventId], references: [id])
+  usedPlayers Json     @default("[{\"day\": 1, \"golfers\": []}, {\"day\": 2, \"golfers\": []}, {\"day\": 3, \"golfers\": []}, {\"day\": 4, \"golfers\": []}]")
+  score       Int      @default(0)
 }

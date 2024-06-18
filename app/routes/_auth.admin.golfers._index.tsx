@@ -89,6 +89,13 @@ export const action = async (args: DataFunctionArgs) => {
   const body = JSON.parse(await args.request.text());
   const tournamentId = body.tournamentId;
 
+  console.log('Refreshing golfers for tournament: ', tournamentId);
+
+  const response = await fetch(`https://site.web.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga&region=au&lang=en&event=${tournamentId}`);
+  const data = await response.json();
+
+  console.log('Data: ', data.events[0].id);
+
   var golfers = await prisma.golfer.findMany({
     select: {
       id: true,
@@ -101,28 +108,28 @@ export const action = async (args: DataFunctionArgs) => {
     },
   })
 
-  const response = await fetch(`https://site.web.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga&region=au&lang=en&event=${tournamentId}`);
-  const data = await response.json();
-
-  const competitors = data.events[0].competitions[0].competitors.map((player: any) => {
-    return {
-      name: player.athlete.displayName,
-      salary: 0,
-      espnId: player.athlete.id,
-      pictureLink: player.athlete?.headshot?.href,
-      events: {
-        connect: {
-          id: tournamentId,
-        },
+const competitors = data.events[0].competitions[0].competitors.map((player: any) => {
+  return {
+    name: player.athlete.displayName,
+    salary: 0,
+    espnId: player.athlete.id,
+    pictureLink: player.athlete?.headshot?.href || '',
+    events: {
+      connect: {
+        id: tournamentId,
       },
-    };
-  });
+    },
+  };
+});
 
-  const golfersToCreate = competitors.filter((competitor: any) => !golfers.find((golfer: any) => golfer.espnId === competitor.espnId));
+const golfersToCreate = competitors.filter((competitor: any) => !golfers.find((golfer: any) => golfer.espnId === competitor.espnId)); 
 
-  await prisma.golfer.createMany({
-    data: golfersToCreate,
+// Create golfers one by one due to nested write limitations in createMany
+for (const golfer of golfersToCreate) {
+  await prisma.golfer.create({
+    data: golfer,
   });
+}
 
   const fantasyResponse = await fetch(`https://www.fantasyalarm.com/sports/pga/percentage?group=`);
   const fantasyData = await fantasyResponse.json();

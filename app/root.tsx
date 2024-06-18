@@ -101,7 +101,7 @@ export default function App() {
     return match == null ? void 0 : match[2]
   }
 
-  const DEFAULT_COLOR_MODE: 'dark' | 'light' | null = 'light'
+  const DEFAULT_COLOR_MODE: 'dark' | 'dark' | null = 'dark'
   const CHAKRA_COOKIE_COLOR_KEY = 'chakra-ui-color-mode'
   let cookies = useLoaderData()
 
@@ -110,12 +110,12 @@ export default function App() {
 
     const mediaWatcher = window.matchMedia('(prefers-color-scheme: dark)')
     document.cookie = `chakra-ui-color-mode=${
-      mediaWatcher.matches ? 'dark' : 'light'
+      mediaWatcher.matches ? 'dark' : 'dark'
     }; path=/`
 
     function updatePrefersDark(e: { matches: any }) {
       document.cookie = `chakra-ui-color-mode=${
-        e.matches ? 'dark' : 'light'
+        e.matches ? 'dark' : 'dark'
       }; path=/`
     }
     mediaWatcher.addEventListener('change', updatePrefersDark)

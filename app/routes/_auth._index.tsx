@@ -20,6 +20,8 @@ import { ValidatedCheckbox } from '~/components/ValidatedCheckbox';
 import { set } from 'date-fns';
 import { FaTrash } from 'react-icons/fa';
 import { css, Global } from '@emotion/react';
+import { Head } from '@react-email/components';
+import { format } from 'date-fns';
 
 export function meta({data}) {
   return [{ title: `${data.siteName} - Home` }]
@@ -79,8 +81,7 @@ export const loader = async (args: DataFunctionArgs) => {
   
   // Get the event with the closest endDate
   const currentEvent = sortedEvents[0];
-
-  console.log("Current Event: ", currentEvent)
+  const nextEvent = sortedEvents.find(event => event.startDate > new Date());
 
   const event = await prisma.event.findFirst({
     where: {
@@ -174,7 +175,7 @@ export const loader = async (args: DataFunctionArgs) => {
 
   const siteName = process.env.SITE_NAME ? process.env.SITE_NAME.toString() : 'Blank';
 
-  return json({ user, siteName, event });
+  return json({ user, siteName, event, nextEvent });
 };
 
 export async function action(args: DataFunctionArgs) {
@@ -191,13 +192,11 @@ export async function action(args: DataFunctionArgs) {
 }
 
 export default function index() {
-  const { user, event } = useLoaderData<typeof loader>()
+  const { user, event, nextEvent } = useLoaderData<typeof loader>()
   const isMobile = useBreakpointValue({ base: true, md: false });
 
   const [team, setTeam] = useState(event?.teams.find(team => team.user.id === user.id));
-  const golfers = event?.golfers;
-
-  console.log('Event: ', event);
+  const golfers = event?.golfers; 
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGolfer, setSelectedGolfer] = useState<string | null>(null);
@@ -251,8 +250,6 @@ export default function index() {
         }),
       });
   
-      console.log('Response', response);
-  
       if (response.ok) {
         window.location.reload();
       } else {
@@ -263,8 +260,31 @@ export default function index() {
     }
   };
 
-  var spent = team.golfers.reduce((total, golfer) => total + Number(golfer.salary), 0);
-  spent += team.bench.reduce((total, golfer) => total + Number(golfer.salary), 0);
+  const handleAddTeam = async () => {
+    try {
+      const response = await fetch(`/team/new`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          userId: user.id,
+          eventId: event.id
+        }),
+      });
+
+      if (response.ok) {
+        window.location.reload();
+      } else {
+        console.error('Error adding team', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error adding team', error);
+    }
+  }
+
+  var spent = team?.golfers.reduce((total, golfer) => total + Number(golfer.salary), 0);
+  spent += team?.bench.reduce((total, golfer) => total + Number(golfer.salary), 0);
 
   const remainingSalary = (Number(100) - spent).toFixed(2);
 
@@ -274,7 +294,11 @@ export default function index() {
     <Box width="100%" p={6}>
       <Global styles={glowAnimation} />
       <Stack spacing={10}>
-        <Heading size="lg">Welcome, {user.firstName}</Heading>
+        <Flex width="100%" direction="row">
+          <Heading size="lg">Welcome, {user.firstName}</Heading>
+          <Spacer />
+          <Heading size="medium">Next event: {nextEvent.name} - {format(new Date(nextEvent.startDate), 'dd/MM/yyyy')}</Heading>
+        </Flex>
         <Flex direction={["column",  "column", "row"]}>
           <Box width={["100%", "100%", "33%"]}>
             <Heading fontSize="large">Leaderboard</Heading>
@@ -297,13 +321,11 @@ export default function index() {
             </Flex>
             {isLeaderboardOpen ? (
               <Card>
-                <CardHeader>
-                  <Heading fontSize="medium">
-                    RBC Heritage
-                  </Heading>
-                </CardHeader>
                 <CardBody>
-                  <Stack spacing={2}>
+                  <Stack spacing={4}>
+                  <Heading fontSize="larger">
+                    {event.name}
+                  </Heading>
                     <Table variant="simple">
                       <Thead>
                         <Tr>
@@ -420,7 +442,9 @@ export default function index() {
                 <Spacer />
                 <Text>Remaining Salary: ${remainingSalary}m</Text>
               </HStack>
-              <SimpleGrid minChildWidth='340px' gap={4}>
+
+              {team ? (
+                <SimpleGrid minChildWidth='340px' gap={4}>
                 {team.golfers.map((golfer) => {
 
                 const currentStatus = golfer.performances[golfer.performances.length - 1].status;
@@ -458,7 +482,7 @@ export default function index() {
                                 <Th>Score</Th>
                               </Tr>
                               {golfer.performances.map((performance) => {
-                                console.log('Performance', performance);
+
                                 let timeToTee: number | undefined;
                                 if (performance.teeTime) {
                                   timeToTee = new Date().getTime() - new Date(performance.teeTime).getTime();
@@ -505,7 +529,7 @@ export default function index() {
                   </GridItem>
                 )
                 })}
-                {Array.from({ length: 4 - team.golfers.length }).map((_, index) => (
+                {Array.from({ length: 4 - team?.golfers.length }).map((_, index) => (
                   <GridItem key={index}>
                     <Card>
                       <CardHeader>No Golfer</CardHeader>
@@ -516,12 +540,15 @@ export default function index() {
                   </GridItem>
                 ))}
               </SimpleGrid>
+              ) : (
+                <Button onClick={() => handleAddTeam()}>Add Team</Button>
+              )}              
             </Box>
 
             <Box mt={6}>
               <Heading size="md" mb={6}>Bench</Heading>
               <SimpleGrid  minChildWidth='340px' gap={4}>
-                {team.bench.map((golfer) => (
+                {team?.bench.map((golfer) => (
                   <GridItem key={golfer.id}>
                     <Card>
                       <CardBody>
@@ -566,7 +593,7 @@ export default function index() {
                     </Card>
                   </GridItem>
                 ))}
-                {Array.from({ length: 2 - team.bench.length }).map((_, index) => (
+                {Array.from({ length: 2 - team?.bench.length }).map((_, index) => (
                   <GridItem key={index}>
                     <Card>
                       <CardHeader>No Golfer</CardHeader>
@@ -591,8 +618,8 @@ export default function index() {
                 <FormLabel>Select Golfer</FormLabel>
                 <Stack spacing={2}>
                   {sortedGolfers.map((golfer) => {
-                    const isOnTeam = team.golfers.some(teamGolfer => teamGolfer.id === golfer.id);
-                    const isOnBench = team.bench.some(benchGolfer => benchGolfer.id === golfer.id);
+                    const isOnTeam = team?.golfers.some(teamGolfer => teamGolfer.id === golfer.id);
+                    const isOnBench = team?.bench.some(benchGolfer => benchGolfer.id === golfer.id);
                     const shouldDisable = isOnTeam || isOnBench;
 
                     const tooExpensive = !shouldDisable && Number(golfer.salary) > remainingSalary;
